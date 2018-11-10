@@ -9,7 +9,7 @@ with np.load('mnist.npz') as data:
 layer_sizes = (784,5,10)
 
 net = nn.NeuralNetwork(layer_sizes)
-prediction = net.predict(training_images)
+prediction = net.forward(training_images)
 net.print_accuracy(training_images, training_labels)
 
 plt.imshow(training_images[0].reshape(28,28), cmap = 'gray')

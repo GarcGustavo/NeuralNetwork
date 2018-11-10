@@ -1,21 +1,46 @@
-import numpy as np
+# %load network.py
+
+"""
+network.py
+~~~~~~~~~~
+IT WORKS
+A module to implement the stochastic gradient descent learning
+algorithm for a feedforward neural network.  Gradients are calculated
+using backpropagation.  Note that I have focused on making the code
+simple, easily readable, and easily modifiable.  It is not optimized,
+and omits many desirable features.
+"""
+
+#### Libraries
+# Standard library
 import random
 
-class NeuralNetwork:
-    def __init__(self, layer_sizes):
-        weight_shapes = [(a, b) for a, b in zip(layer_sizes[1:], layer_sizes[:-1])]
-        self.weights = [np.random.standard_normal(s)/s[1]**.5 for s in weight_shapes]
-        self.biases = [np.zeros((s, 1)) for s in layer_sizes[1:]]
-        self.num_layers = len(layer_sizes)
+# Third-party libraries
+import numpy as np
 
-    def print_accuracy(self, images, labels):
-        predictions = self.forward(images)
-        num_correct = sum([np.argmax(a) == np.argmax(b) for a,b in zip(predictions, labels)])
-        print('{0}/{1} accuracy: {2}%'.format(num_correct, len(images), (num_correct/len(images)) * 100))
+class Network(object):
 
-    def forward(self, a):
-        for w,b in zip(self.weights, self.biases):
-            a = sigmoid(np.matmul(w,a) + b)
+    def __init__(self, sizes):
+        """The list ``sizes`` contains the number of neurons in the
+        respective layers of the network.  For example, if the list
+        was [2, 3, 1] then it would be a three-layer network, with the
+        first layer containing 2 neurons, the second layer 3 neurons,
+        and the third layer 1 neuron.  The biases and weights for the
+        network are initialized randomly, using a Gaussian
+        distribution with mean 0, and variance 1.  Note that the first
+        layer is assumed to be an input layer, and by convention we
+        won't set any biases for those neurons, since biases are only
+        ever used in computing the outputs from later layers."""
+        self.num_layers = len(sizes)
+        self.sizes = sizes
+        self.biases = [np.random.randn(y, 1) for y in sizes[1:]]
+        self.weights = [np.random.randn(y, x)
+                        for x, y in zip(sizes[:-1], sizes[1:])]
+
+    def feedforward(self, a):
+        """Return the output of the network if ``a`` is input."""
+        for b, w in zip(self.biases, self.weights):
+            a = sigmoid(np.dot(w, a)+b)
         return a
 
     def SGD(self, training_data, epochs, mini_batch_size, eta,
@@ -28,8 +53,14 @@ class NeuralNetwork:
         network will be evaluated against the test data after each
         epoch, and partial progress printed out.  This is useful for
         tracking progress, but slows things down substantially."""
-        if test_data: n_test = len(test_data)
+
+        training_data = list(training_data)
         n = len(training_data)
+
+        if test_data:
+            test_data = list(test_data)
+            n_test = len(test_data)
+
         for j in range(epochs):
             random.shuffle(training_data)
             mini_batches = [
@@ -38,10 +69,9 @@ class NeuralNetwork:
             for mini_batch in mini_batches:
                 self.update_mini_batch(mini_batch, eta)
             if test_data:
-                print ("Epoch {0}: {1} / {2}".format(
-                    j, self.evaluate(test_data), n_test))
+                print("Epoch {} : {} / {}".format(j,self.evaluate(test_data),n_test));
             else:
-                print ("Epoch {0} complete".format(j))
+                print("Epoch {} complete".format(j))
 
     def update_mini_batch(self, mini_batch, eta):
         """Update the network's weights and biases by applying
@@ -99,7 +129,7 @@ class NeuralNetwork:
         network outputs the correct result. Note that the neural
         network's output is assumed to be the index of whichever
         neuron in the final layer has the highest activation."""
-        test_results = [(np.argmax(self.forward(x)), y)
+        test_results = [(np.argmax(self.feedforward(x)), y)
                         for (x, y) in test_data]
         return sum(int(x == y) for (x, y) in test_results)
 
@@ -108,6 +138,7 @@ class NeuralNetwork:
         \partial a for the output activations."""
         return (output_activations-y)
 
+#### Miscellaneous functions
 def sigmoid(z):
     """The sigmoid function."""
     return 1.0/(1.0+np.exp(-z))
